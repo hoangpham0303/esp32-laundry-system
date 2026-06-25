@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trạng Thái Máy Giặt Thời Gian Thực</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+    </style>
+</head>
+<body>
+
+    <nav class="bg-indigo-600 text-white shadow-md">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-square-rss text-xl text-amber-400 animate-pulse"></i>
+                <span class="font-bold text-lg tracking-wide">LAUNDRY MONITOR</span>
+            </div>
+            <span class="text-xs font-semibold bg-indigo-700 px-2.5 py-1 rounded-md">Cập nhật tự động</span>
+        </div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto px-4 py-10 space-y-8">
+        
+        <div class="text-center space-y-2">
+            <h1 class="text-2xl font-black text-gray-800 tracking-tight">TRẠNG THÁI HỆ THỐNG MÁY GIẶT</h1>
+            <p class="text-sm text-gray-500">Vui lòng kiểm tra tình trạng máy trống trước khi đem đồ xuống giặt.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <div id="card-m1" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 transition-all duration-300">
+                <div class="flex justify-between items-start">
+                    <div class="space-y-1">
+                        <h2 class="text-xl font-extrabold text-gray-800">MÁY GIẶT SỐ 1</h2>
+                        <p class="text-sm font-bold transition-all" id="user-m1">Hiện tại: Trống</p>
+                    </div>
+                    <div id="icon-m1" class="p-3 rounded-xl text-2xl transition-all"><i class="fa-solid fa-circle-notch"></i></div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-gray-100 flex justify-between items-center">
+                    <span class="text-xs text-gray-400 uppercase font-bold tracking-wider">Tình trạng</span>
+                    <span id="badge-m1" class="text-xs font-black uppercase px-3 py-1 rounded-full">Đang tải...</span>
+                </div>
+            </div>
+
+            <div id="card-m2" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 transition-all duration-300">
+                <div class="flex justify-between items-start">
+                    <div class="space-y-1">
+                        <h2 class="text-xl font-extrabold text-gray-800">MÁY GIẶT SỐ 2</h2>
+                        <p class="text-sm font-bold transition-all" id="user-m2">Hiện tại: Trống</p>
+                    </div>
+                    <div id="icon-m2" class="p-3 rounded-xl text-2xl transition-all"><i class="fa-solid fa-circle-notch"></i></div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-gray-100 flex justify-between items-center">
+                    <span class="text-xs text-gray-400 uppercase font-bold tracking-wider">Tình trạng</span>
+                    <span id="badge-m2" class="text-xs font-black uppercase px-3 py-1 rounded-full">Đang tải...</span>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const firebaseConfig = { databaseURL: "https://doan-maygiat-default-rtdb.asia-southeast1.firebasedatabase.app" };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let trangThaiM1 = "San sang", phongM1 = "";
+        let trangThaiM2 = "San sang", phongM2 = "";
+
+        function bieuDienUI(may, trangThai, phong) {
+            const card = document.getElementById('card-m' + may);
+            const badge = document.getElementById('badge-m' + may);
+            const userText = document.getElementById('user-m' + may);
+            const icon = document.getElementById('icon-m' + may);
+
+            if (trangThai === "Dang giat...") {
+                badge.innerText = "ĐANG HOẠT ĐỘNG";
+                badge.className = "text-xs font-black uppercase px-3 py-1 rounded-full bg-red-100 text-red-700";
+                card.className = "bg-white rounded-2xl p-6 shadow-md border-2 border-red-400 scale-[1.01]";
+                icon.className = "p-3 rounded-xl text-2xl bg-red-50 text-red-600 animate-spin";
+                icon.innerHTML = `<i class="fa-solid fa-compact-disc"></i>`;
+                
+                userText.innerText = "Đang giặt: Phòng " + (phong || "...");
+                userText.className = "text-sm text-red-600 font-bold";
+            } else {
+                badge.innerText = "ĐANG TRỐNG";
+                badge.className = "text-xs font-black uppercase px-3 py-1 rounded-full bg-green-100 text-green-700";
+                card.className = "bg-white rounded-2xl p-6 shadow-sm border border-gray-200";
+                icon.className = "p-3 rounded-xl text-2xl bg-green-50 text-green-600";
+                icon.innerHTML = `<i class="fa-solid fa-check-circle"></i>`;
+                
+                userText.innerText = "Hiện tại: Trống";
+                userText.className = "text-sm text-gray-400 font-medium";
+            }
+        }
+
+        // Lắng nghe Máy 1
+        database.ref('/machines/1').on('value', snapshot => {
+            trangThaiM1 = snapshot.val() || "San sang";
+            bieuDienUI(1, trangThaiM1, phongM1);
+        });
+        database.ref('/machines/1_phong').on('value', snapshot => {
+            phongM1 = snapshot.val() || "";
+            bieuDienUI(1, trangThaiM1, phongM1);
+        });
+
+        // Lắng nghe Máy 2
+        database.ref('/machines/2').on('value', snapshot => {
+            trangThaiM2 = snapshot.val() || "San sang";
+            bieuDienUI(2, trangThaiM2, phongM2);
+        });
+        database.ref('/machines/2_phong').on('value', snapshot => {
+            phongM2 = snapshot.val() || "";
+            bieuDienUI(2, trangThaiM2, phongM2);
+        });
+    </script>
+</body>
+</html>

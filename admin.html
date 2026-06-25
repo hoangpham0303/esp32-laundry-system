@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quản Lý Máy Giặt Thông Minh IoT - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style> body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; } </style>
+</head>
+<body>
+
+    <nav class="bg-indigo-600 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-charging-station text-2xl text-amber-300"></i>
+                <span class="font-bold text-xl tracking-wide">LAUNDRY IoT - BAN QUẢN LÝ</span>
+            </div>
+            <div class="text-sm bg-indigo-700 px-3 py-1.5 rounded-md border border-indigo-500">
+                <i class="fa-solid fa-circle text-green-400 text-xs mr-1.5 animate-pulse"></i> Hệ thống trực tuyến
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 space-y-8">
+
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+                <h2 class="text-base font-semibold text-gray-800"><i class="fa-solid fa-receipt mr-2 text-indigo-500"></i>Cấu hình tính toán doanh thu</h2>
+                <p class="text-xs text-gray-500">Nhập đơn giá để hệ thống tự động quy đổi điện năng tiêu thụ sang thành tiền.</p>
+            </div>
+            <div class="flex items-center space-x-2 w-full sm:w-auto">
+                <label class="text-sm font-medium text-gray-700 whitespace-nowrap">Giá điện (đ/kWh):</label>
+                <input type="number" id="electricityRate" value="3000" class="w-36 px-3 py-2 border rounded-lg text-sm font-bold text-gray-800 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="taiLaiBangNguoiDung()">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl"><i class="fa-solid fa-soap text-xl"></i></div>
+                        <div>
+                            <h3 class="font-bold text-gray-800">MÁY GIẶT SỐ 1</h3>
+                            <p class="text-xs text-gray-500 font-semibold" id="phong-m1">Hiện tại: Trống</p>
+                        </div>
+                    </div>
+                    <span id="status-m1" class="px-3 py-1 rounded-full text-xs font-semibold uppercase bg-gray-100 text-gray-600">Đang tải...</span>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div class="bg-gray-50 p-3 rounded-xl border border-gray-100"><span class="text-xs text-gray-400 block mb-1">Điện áp</span><span class="text-lg font-bold text-gray-700" id="v-m1">0.0 V</span></div>
+                        <div class="bg-gray-50 p-3 rounded-xl border border-gray-100"><span class="text-xs text-gray-400 block mb-1">Dòng điện</span><span class="text-lg font-bold text-gray-700" id="a-m1">0.00 A</span></div>
+                        <div class="bg-gray-50 p-3 rounded-xl border border-gray-100"><span class="text-xs text-gray-400 block mb-1">Công suất</span><span class="text-lg font-bold text-indigo-600" id="w-m1">0.0 W</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2.5 bg-sky-50 text-sky-600 rounded-xl"><i class="fa-solid fa-soap text-xl"></i></div>
+                        <div>
+                            <h3 class="font-bold text-gray-800">MÁY GIẶT SỐ 2</h3>
+                            <p class="text-xs text-gray-500 font-semibold" id="phong-m2">Hiện tại: Trống</p>
+                        </div>
+                    </div>
+                    <span id="status-m2" class="px-3 py-1 rounded-full text-xs font-semibold uppercase bg-gray-100 text-gray-600">Đang tải...</span>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div class="bg-gray-50 p-3 rounded-xl border border-gray-100"><span class="text-xs text-gray-400 block mb-1">Điện áp</span><span class="text-lg font-bold text-gray-700" id="v-m2">0.0 V</span></div>
+                        <div class="bg-gray-50 p-3 rounded-xl border border-gray-100"><span class="text-xs text-gray-400 block mb-1">Dòng điện</span><span class="text-lg font-bold text-gray-700" id="a-m2">0.00 A</span></div>
+                        <div class="bg-gray-50 p-3 rounded-xl border border-gray-100"><span class="text-xs text-gray-400 block mb-1">Công suất</span><span class="text-lg font-bold text-sky-600" id="w-m2">0.0 W</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-calendar-days text-indigo-500 mr-3 text-lg"></i>
+                    <div>
+                        <h3 class="font-bold text-gray-800">Báo Cáo Doanh Thu Theo Tháng</h3>
+                        <div class="flex items-center mt-1">
+                            <span class="text-xs text-gray-500 mr-2">Tháng kết toán:</span>
+                            <select id="monthSelector" class="text-sm border border-gray-300 rounded px-2 py-1 font-semibold text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400" onchange="taiLaiBangNguoiDung()"></select>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-100 px-4 py-2 rounded-lg text-right">
+                    <span class="block text-xs font-semibold text-emerald-600 uppercase tracking-wide">Tổng thu tháng này</span>
+                    <span id="totalRevenue" class="text-xl font-black text-emerald-700">0 đ</span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-left">
+                    <thead class="bg-gray-50/70 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <tr>
+                            <th class="px-6 py-4">UID Thẻ</th>
+                            <th class="px-6 py-4">Phòng</th>
+                            <th class="px-6 py-4 text-center">Số Lần Giặt</th>
+                            <th class="px-6 py-4 text-right">Điện Năng Tiêu Thụ</th>
+                            <th class="px-6 py-4 text-right text-emerald-600">Thành Tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 text-sm text-gray-700 font-medium" id="user-table-body">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const firebaseConfig = { databaseURL: "https://doan-maygiat-default-rtdb.asia-southeast1.firebasedatabase.app" };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let boNhoNguoiDung = null;
+        let availableMonths = new Set(); 
+        let isFirstLoad = true;
+
+        // UI Máy giặt
+        function capNhatMayUI(may, status, room) {
+            const element = document.getElementById('status-m' + may);
+            const infoElement = document.getElementById('phong-m' + may);
+            if (status === "Dang giat...") {
+                element.innerText = "ĐANG GIẶT"; element.className = "px-3 py-1 rounded-full text-xs font-bold uppercase bg-amber-100 text-amber-700 animate-pulse";
+                infoElement.innerText = "Đang giặt: " + (room || "..."); infoElement.className = "text-xs text-amber-600 font-bold";
+            } else {
+                element.innerText = "SẴN SÀNG"; element.className = "px-3 py-1 rounded-full text-xs font-bold uppercase bg-emerald-100 text-emerald-700";
+                infoElement.innerText = "Hiện tại: Trống"; infoElement.className = "text-xs text-gray-400 font-medium";
+            }
+        }
+
+        database.ref('/machines/1').on('value', snap => capNhatMayUI(1, snap.val() || "San sang", window.roomM1));
+        database.ref('/machines/1_phong').on('value', snap => { window.roomM1 = snap.val() || ""; capNhatMayUI(1, window.statusM1, window.roomM1); });
+        database.ref('/machines/2').on('value', snap => capNhatMayUI(2, snap.val() || "San sang", window.roomM2));
+        database.ref('/machines/2_phong').on('value', snap => { window.roomM2 = snap.val() || ""; capNhatMayUI(2, window.statusM2, window.roomM2); });
+
+        database.ref('/pzem/may1/live').on('value', snap => {
+            const d = snap.val() || {}; document.getElementById('v-m1').innerText = (d.dien_ap || 0).toFixed(1) + " V"; document.getElementById('a-m1').innerText = (d.dong_dien || 0).toFixed(2) + " A"; document.getElementById('w-m1').innerText = (d.cong_suat || 0).toFixed(1) + " W";
+        });
+        database.ref('/pzem/may2/live').on('value', snap => {
+            const d = snap.val() || {}; document.getElementById('v-m2').innerText = (d.dien_ap || 0).toFixed(1) + " V"; document.getElementById('a-m2').innerText = (d.dong_dien || 0).toFixed(2) + " A"; document.getElementById('w-m2').innerText = (d.cong_suat || 0).toFixed(1) + " W";
+        });
+
+        // XỬ LÝ LỌC THÁNG VÀ TÍNH TIỀN
+        database.ref('/users').on('value', snapshot => {
+            boNhoNguoiDung = snapshot.val();
+            
+            // Tìm tất cả các tháng có trong hệ thống
+            if (boNhoNguoiDung) {
+                Object.values(boNhoNguoiDung).forEach(user => {
+                    if (user.history) { Object.keys(user.history).forEach(month => availableMonths.add(month)); }
+                });
+            }
+
+            // Cập nhật thẻ Select
+            const selector = document.getElementById('monthSelector');
+            const currentSelected = selector.value;
+            selector.innerHTML = "";
+            let sortedMonths = Array.from(availableMonths).sort().reverse(); // Tháng mới nhất xếp trên
+            
+            if (sortedMonths.length === 0) {
+                selector.innerHTML = `<option value="">Chưa có dữ liệu</option>`;
+            } else {
+                sortedMonths.forEach(m => {
+                    let opt = document.createElement('option');
+                    opt.value = m; opt.innerText = "Tháng " + m.replace('-', '/');
+                    selector.appendChild(opt);
+                });
+                if (isFirstLoad) { selector.value = sortedMonths[0]; isFirstLoad = false; } 
+                else if (sortedMonths.includes(currentSelected)) { selector.value = currentSelected; }
+            }
+
+            taiLaiBangNguoiDung();
+        });
+
+        function taiLaiBangNguoiDung() {
+            const tableBody = document.getElementById('user-table-body');
+            tableBody.innerHTML = "";
+            let totalRevenue = 0;
+            
+            const selectedMonth = document.getElementById('monthSelector').value;
+            const rate = parseFloat(document.getElementById('electricityRate').value) || 0;
+
+            if (boNhoNguoiDung && selectedMonth) {
+                Object.keys(boNhoNguoiDung).forEach(uid => {
+                    const user = boNhoNguoiDung[uid];
+                    
+                    // Lấy dữ liệu của tháng được chọn, nếu không có thì bằng 0
+                    const kwhThang = (user.history && user.history[selectedMonth]) ? user.history[selectedMonth] : 0;
+                    if (kwhThang > 0) {
+                        const thanhTien = kwhThang * rate;
+                        totalRevenue += thanhTien;
+
+                        const row = document.createElement('tr');
+                        row.className = "hover:bg-gray-50/80 transition-colors";
+                        row.innerHTML = `
+                            <td class="px-6 py-4 font-mono text-xs text-gray-500">${uid}</td>
+                            <td class="px-6 py-4 text-gray-900 font-semibold">${user.phong || 'N/A'}</td>
+                            <td class="px-6 py-4 text-center font-bold text-gray-600">${user.da_giat || 0} lần</td>
+                            <td class="px-6 py-4 text-right font-bold text-indigo-600">${kwhThang.toFixed(3)} kWh</td>
+                            <td class="px-6 py-4 text-right font-black text-emerald-600">${Math.round(thanhTien).toLocaleString('vi-VN')} đ</td>
+                        `;
+                        tableBody.appendChild(row);
+                    }
+                });
+            }
+
+            if (tableBody.innerHTML === "") {
+                tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-gray-400">Không có hóa đơn phát sinh trong tháng này</td></tr>`;
+            }
+
+            document.getElementById('totalRevenue').innerText = Math.round(totalRevenue).toLocaleString('vi-VN') + " đ";
+        }
+    </script>
+</body>
+</html>
