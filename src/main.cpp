@@ -46,12 +46,12 @@ Adafruit_PCF8574 pcf;
 PZEM004Tv30 pzem1(Serial2, PZEM1_RX, PZEM1_TX);
 PZEM004Tv30 pzem2(Serial1, PZEM2_RX, PZEM2_TX); 
 
-FirebaseData fbdo;         // Dành cho luồng chính (Quét thẻ)
-FirebaseData fbdo_pzem;    // Dành riêng cho luồng phụ (Core 0) để tránh xung đột dữ liệu
+FirebaseData fbdo;        
+FirebaseData fbdo_pzem;   
 FirebaseAuth auth;
 FirebaseConfig config;
 
-// Khai báo Task chạy ngầm
+
 TaskHandle_t TaskPZEM;
 
 // ================= BIẾN TRẠNG THÁI TOÀN CỤC =================
@@ -64,7 +64,6 @@ unsigned long tCa2MayTat = 0;
 int soNguoiTrongPhong = 0;
 int trangThaiDemNguoi = 0; 
 
-// Các biến được dùng chung giữa 2 Core
 volatile float dongDienM1 = 0.0; 
 volatile float dongDienM2 = 0.0; 
 unsigned long tDuoiNguongM1 = 0;
@@ -185,7 +184,7 @@ void hienThiOLED() {
   display.display(); 
 }
 
-// ================= TASK CHẠY NGẦM TRÊN CORE 0 (Đo PZEM mỗi 1s) =================
+// ================= TASK (CHẠY TRÊN CORE 0)  =================
 void TaskPZEMcode(void * pvParameters) {
   for(;;) {
     // 1. Gửi và cập nhật dữ liệu máy 1
@@ -195,14 +194,12 @@ void TaskPZEMcode(void * pvParameters) {
       float P1 = pzem1.power();
       if (isnan(P1)) P1 = 0.0;
 
-      // ÁP DỤNG Ý TƯỞNG CỦA BẠN: Gom nhóm dữ liệu gửi JSON 1 lần chống lag mạng
       FirebaseJson jsonLive1;
       jsonLive1.set("dien_ap", V1);
       jsonLive1.set("dong_dien", dongDienM1);
       jsonLive1.set("cong_suat", P1);
       Firebase.updateNodeAsync(fbdo_pzem, "/pzem/may1/live", jsonLive1);
-      
-      // Tích lũy điện năng khi đang giặt
+  
       if (trangThaiMay1 == 1 && uidCurrentM1 != "" && thangHienTaiM1 != "unknown") {
         float eNow = pzem1.energy();
         if (!isnan(eNow)) {
@@ -213,7 +210,7 @@ void TaskPZEMcode(void * pvParameters) {
           }
         }
       }
-    } else { dongDienM1 = -1.0; } // Báo hiệu chưa kết nối được mạch
+    } else { dongDienM1 = -1.0; } 
 
     // 2. Gửi và cập nhật dữ liệu máy 2
     float V2 = pzem2.voltage(); 
@@ -240,7 +237,6 @@ void TaskPZEMcode(void * pvParameters) {
       }
     } else { dongDienM2 = -1.0; }
 
-    // Nghỉ đúng 1 giây rồi vòng lại đo tiếp, KHÔNG ẢNH HƯỞNG ĐẾN QUÉT THẺ
     vTaskDelay(1000 / portTICK_PERIOD_MS); 
   }
 }
@@ -295,7 +291,7 @@ void setup() {
     0);             /* Gắn cố định vào Core 0 */
 }
 
-// ================= VÒNG LẶP CHÍNH (CHẠY TRÊN CORE 1 - CHỈ LO QUÉT THẺ) =================
+// ================= VÒNG LẶP CHÍNH (CHẠY TRÊN CORE 1 ) =================
 void loop() {
   unsigned long thoiGianHienTai = millis();
 
@@ -349,7 +345,7 @@ void loop() {
       reader1.PICC_HaltA(); reader1.PCD_StopCrypto1(); 
     }
   } else if (trangThaiMay1 == 1) { 
-    // Theo dõi dòng điện để ngắt rơ-le (dongDienM1 do Core 0 cập nhật ngầm)
+    // Theo dõi dòng điện để ngắt rơ-le 
     if (dongDienM1 > 0.0) { tDuoiNguongM1 = thoiGianHienTai; } 
     else if (dongDienM1 == 0.0) {
       if (thoiGianHienTai - tDuoiNguongM1 >= 15000) { 
