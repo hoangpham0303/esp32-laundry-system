@@ -47,7 +47,7 @@ PZEM004Tv30 pzem1(Serial2, PZEM1_RX, PZEM1_TX);
 PZEM004Tv30 pzem2(Serial1, PZEM2_RX, PZEM2_TX); 
 
 FirebaseData fbdo;        
-FirebaseData fbdo_pzem;   
+FirebaseData fbdo_pzem;    
 FirebaseAuth auth;
 FirebaseConfig config;
 
@@ -63,6 +63,7 @@ bool quatDangChay = false;
 unsigned long tCa2MayTat = 0; 
 int soNguoiTrongPhong = 0;
 int trangThaiDemNguoi = 0; 
+
 
 volatile float dongDienM1 = 0.0; 
 volatile float dongDienM2 = 0.0; 
@@ -119,9 +120,6 @@ bool xuLyQuetThe(String uid, int mayGiat) {
     if(mayGiat == 1) phongMay1 = phong;
     else phongMay2 = phong;
 
-    int daGiat = 0;
-    if (Firebase.getInt(fbdo, duongDanUser + "/da_giat")) daGiat = fbdo.intData();
-    Firebase.setIntAsync(fbdo, duongDanUser + "/da_giat", daGiat + 1);
 
     String thangStr = layThangHienTai();
     float kwhThangNay = 0.0;
@@ -184,7 +182,7 @@ void hienThiOLED() {
   display.display(); 
 }
 
-// ================= TASK (CHẠY TRÊN CORE 0)  =================
+// ================= TASK (CHẠY TRÊN CORE 0) =================
 void TaskPZEMcode(void * pvParameters) {
   for(;;) {
     // 1. Gửi và cập nhật dữ liệu máy 1
@@ -194,11 +192,13 @@ void TaskPZEMcode(void * pvParameters) {
       float P1 = pzem1.power();
       if (isnan(P1)) P1 = 0.0;
 
+      
       FirebaseJson jsonLive1;
       jsonLive1.set("dien_ap", V1);
       jsonLive1.set("dong_dien", dongDienM1);
       jsonLive1.set("cong_suat", P1);
       Firebase.updateNodeAsync(fbdo_pzem, "/pzem/may1/live", jsonLive1);
+      
   
       if (trangThaiMay1 == 1 && uidCurrentM1 != "" && thangHienTaiM1 != "unknown") {
         float eNow = pzem1.energy();
@@ -236,6 +236,7 @@ void TaskPZEMcode(void * pvParameters) {
         }
       }
     } else { dongDienM2 = -1.0; }
+
 
     vTaskDelay(1000 / portTICK_PERIOD_MS); 
   }
@@ -282,16 +283,16 @@ void setup() {
 
   // KHỞI TẠO LUỒNG CHẠY NGẦM CHO PZEM TRÊN CORE 0
   xTaskCreatePinnedToCore(
-    TaskPZEMcode,   /* Tên hàm chứa luồng */
-    "TaskPZEM",     /* Tên định danh */
-    10000,          /* Dung lượng RAM cấp phát (Word) */
-    NULL,           /* Tham số đầu vào */
-    1,              /* Độ ưu tiên */
-    &TaskPZEM,      /* Task handle */
-    0);             /* Gắn cố định vào Core 0 */
+    TaskPZEMcode,   
+    "TaskPZEM",     
+    10000,          
+    NULL,           
+    1,              
+    &TaskPZEM,      
+    0);             
 }
 
-// ================= VÒNG LẶP CHÍNH (CHẠY TRÊN CORE 1 ) =================
+// ================= VÒNG LẶP CHÍNH (CHẠY TRÊN CORE 1 - CHỈ LO QUÉT THẺ) =================
 void loop() {
   unsigned long thoiGianHienTai = millis();
 
@@ -345,7 +346,7 @@ void loop() {
       reader1.PICC_HaltA(); reader1.PCD_StopCrypto1(); 
     }
   } else if (trangThaiMay1 == 1) { 
-    // Theo dõi dòng điện để ngắt rơ-le 
+    // Theo dõi dòng điện để ngắt rơ-le (dongDienM1 do Core 0 cập nhật ngầm)
     if (dongDienM1 > 0.0) { tDuoiNguongM1 = thoiGianHienTai; } 
     else if (dongDienM1 == 0.0) {
       if (thoiGianHienTai - tDuoiNguongM1 >= 15000) { 
